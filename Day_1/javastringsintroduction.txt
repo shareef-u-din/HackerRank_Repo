@@ -1,0 +1,31 @@
+import java.util.Scanner;
+
+public class Solution {
+
+    public static void main(String[] args) {
+        
+        Scanner sc=new Scanner(System.in);
+        String A=sc.next();
+        String B=sc.next();
+        sc.close();
+        StringBuffer sA=new StringBuffer(A);
+        StringBuffer sB=new StringBuffer(B);
+        System.out.println(A.length()+B.length());
+        if(A.compareTo(B) > 0 ){
+            System.out.println("Yes");
+        }else{
+           System.out.println("No"); 
+        }
+        char ch=sA.charAt(0);
+        ch=Character.toUpperCase(ch);
+        sA.setCharAt(0,ch);
+        ch=B.charAt(0);
+        ch=Character.toUpperCase(ch);
+        sB.setCharAt(0,ch);
+        System.out.println(sA + " " + sB);
+        
+    }
+}
+
+
+
