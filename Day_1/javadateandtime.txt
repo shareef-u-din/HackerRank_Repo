@@ -1,0 +1,15 @@
+import java.util.Date;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.text.DateFormat;
+class GetDayFromDate{
+    public static String getDay(String day,String month,String year){
+        int d=Integer.parseInt(day);
+        int m=Integer.parseInt(month);
+        int y=Integer.parseInt(year);
+       Calendar calendar=Calendar.getInstance();
+       calendar.set(y,m-1,d);
+       Date date=calendar.getTime();
+       DateFormat dayOfWeek=new SimpleDateFormat("EEEEEEEE"); 
+       return dayOfWeek.format(date).toUpperCase();
+    }
