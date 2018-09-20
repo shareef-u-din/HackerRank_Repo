@@ -1,0 +1,21 @@
+import java.util.Locale;
+import java.util.Scanner;
+import java.text.NumberFormat;
+
+public class Solution {
+    
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        double payment = scanner.nextDouble();
+        scanner.close();
+        
+        NumberFormat  us=NumberFormat.getCurrencyInstance(Locale.US);
+         System.out.println("US: " + us.format(payment));
+        NumberFormat india=NumberFormat.getCurrencyInstance(new Locale("en","IN"));
+        System.out.println("India: " + india.format(payment));
+        NumberFormat china=NumberFormat.getCurrencyInstance(Locale.CHINA);
+        System.out.println("China: " + china.format(payment));
+        NumberFormat france=NumberFormat.getCurrencyInstance(Locale.FRANCE);
+        System.out.println("France: " + france.format(payment));
+    }
+}
