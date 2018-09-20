@@ -1,0 +1,13 @@
+    public static String getSmallestAndLargest(String s, int k) {
+        String smallest = "";
+        String largest = "";
+        java.util.ArrayList<String> stringList = new java.util.ArrayList<String>();
+        for (int i = 0; i <= s.length() - k; i++) {
+        String substr = s.substring(i, i + k);
+            stringList.add(substr);
+        }
+        java.util.Collections.sort(stringList);
+        smallest=stringList.get(0);
+        largest=stringList.get(stringList.size()-1);
+        return smallest + "\n" + largest;
+    }
