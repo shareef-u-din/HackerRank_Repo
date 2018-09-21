@@ -1,0 +1,28 @@
+import java.io.*;
+import java.util.*;
+import java.util.regex.*;
+public class Solution {
+
+    public static void main(String[] args) {
+        Scanner scan = new Scanner(System.in);
+       
+        String s = null;
+       try{
+            s = scan.nextLine();
+        }catch(Exception ex){
+                 scan.close();
+        }
+        
+         if(s.trim().length()==0 || s== null){
+             System.out.println("0");
+             return;
+         }
+        String[] arr=s.trim().split("[ !,?._'@]+");
+        System.out.println(arr.length);
+        for(String value:arr){
+            System.out.println(value);
+        }
+
+    }
+}
+
