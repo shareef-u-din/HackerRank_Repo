@@ -1,0 +1,19 @@
+import java.math.BigInteger;
+import java.util.Scanner;
+public class Solution {
+
+
+
+    private static final Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        String n = scanner.nextLine();
+        BigInteger bInt=new BigInteger(n,10);
+        if(bInt.isProbablePrime(1)){
+            System.out.println("prime");
+        }else{
+            System.out.println("not prime");
+        }
+        scanner.close();
+    }
+}
