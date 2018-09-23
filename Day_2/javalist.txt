@@ -1,0 +1,32 @@
+import java.io.*;
+import java.util.*;
+
+public class Solution {
+
+    public static void main(String[] args) {
+        Scanner scan=new Scanner(System.in);
+        int numberOfElements=scan.nextInt();
+        List<Integer> list=new ArrayList<Integer>();
+        for(int j=0;j<numberOfElements;j++){
+            list.add(j,scan.nextInt());
+        }
+        int numberOfQueries=scan.nextInt();
+        
+        String query=null;
+        for(int i=0;i<numberOfQueries;i++){
+            query=scan.next();
+            int index=scan.nextInt();
+            if(query.trim().equals("Insert")){
+                int value=scan.nextInt();
+                list.add(index,value);
+            }else if(query.trim().equals("Delete")){
+                if(list.size() > index){
+                    list.remove(index);
+                }
+            }
+        }
+        //forEach loop to iterate the list
+       list.forEach(item->System.out.print(item+" "));
+    }
+    
+}
