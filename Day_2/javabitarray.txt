@@ -1,0 +1,55 @@
+import java.io.*;
+import java.util.*;
+
+public class Solution {
+    public static void main(String[] args) {
+        Scanner in=new Scanner(System.in);
+        int numberOfBits=in.nextInt();
+        int numberOfOperations=in.nextInt();
+        BitSet B1=new BitSet(numberOfBits);
+        BitSet B2=new BitSet(numberOfBits);
+        for(int i=0; i < numberOfOperations;i++){
+            String operation=in.next();
+            int n1=in.nextInt();
+            int n2=in.nextInt();
+            if(operation.equals("AND")){
+                if(n1==1){
+                    B1.and(B2);
+                }else{
+                    B2.and(B1);
+                }
+            }
+            else if(operation.equals("OR")){
+                if(n1==1){
+                    B1.or(B2);
+                }else{
+                    B2.or(B1);
+                }
+            }
+            else if(operation.equals("XOR")){
+                if(n1==1){
+                    B1.xor(B2);
+                }else{
+                    B2.xor(B1);
+                }
+            }
+            else if(operation.equals("SET")){
+                if(n1==1){
+                    B1.set(n2);
+                }else{
+                    B2.set(n2);
+                }
+            }
+             else if(operation.equals("FLIP")){
+                if(n1==1){
+                    B1.flip(n2);
+                }else{
+                    B2.flip(n2);
+                }
+            }
+            System.out.println(B1.cardinality() +" "+ B2.cardinality());
+       
+            
+        }
+    } 
+}
