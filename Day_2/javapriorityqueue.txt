@@ -8,9 +8,6 @@ class Student implements java.util.Comparator<Student>{
     public Student(){
         
     }
-    public Student(){
-        
-    }
     public Student(int id, String name, double cgpa) {
         super();
         this.id = id;
@@ -23,7 +20,7 @@ class Student implements java.util.Comparator<Student>{
             if(s1.name.compareTo(s2.name)==0){
                 return s1.id > s2.id ? -1 : 1;
             }else{
-                return (s1.name.compareTo(s2.name));
+                return s1.name.compareTo(s2.name);
             }
             
         }
@@ -43,23 +40,24 @@ class Student implements java.util.Comparator<Student>{
 }
 class Priorities {
     List<Student> getStudents(List<String> events){
-        java.util.PriorityQueue<Student> students = new
-             java.util.PriorityQueue<Student>(5, new Student());
+        List<Student> students=new ArrayList<Student>();
         for(String event:events){
+            
             if(event.equals("SERVED")){
-                     students.poll();
+                if(students.size()>0){
+                     students.remove(0);
+                }
             }else{
                 String[] arr=event.split(" ");
                 String name=arr[1];
                 double cgpa=Double.parseDouble(arr[2]);
                 int id=Integer.parseInt(arr[3]);
                 students.add(new Student(id,name,cgpa));
+                java.util.Collections.sort(students,new Student());
             }
         }
-        for (Student st: students) {
-                System.out.println(st.getName());
-            }
-        return new ArrayList(students);
+       
+        return students;
     }
 }
 
