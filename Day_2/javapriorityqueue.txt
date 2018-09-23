@@ -1,7 +1,4 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-class Student implements java.util.Comparator<Student>{
+class Student{
     private int id;
     private String name;
     private double cgpa;
@@ -14,20 +11,7 @@ class Student implements java.util.Comparator<Student>{
         this.name = name;
         this.cgpa = cgpa;
     }
-    @Override
-    public int compare(Student s1,Student s2){
-        if(s1.cgpa==s2.cgpa){
-            if(s1.name.compareTo(s2.name)==0){
-                return s1.id > s2.id ? -1 : 1;
-            }else{
-                return s1.name.compareTo(s2.name);
-            }
-            
-        }
-        else{
-            return s1.cgpa > s2.cgpa ? -1 : 1;
-        }
-    }
+   
     public int getID() {
         return id;
     }
@@ -40,24 +24,36 @@ class Student implements java.util.Comparator<Student>{
 }
 class Priorities {
     List<Student> getStudents(List<String> events){
-        List<Student> students=new ArrayList<Student>();
+        java.util.PriorityQueue<Student> students =new java.util.PriorityQueue<Student>(12,                 (Student s1,Student s2)->{
+                        if(Double.compare(s2.getCGPA(),s1.getCGPA())==0){
+                        if(s1.getName().compareTo(s2.getName())==0){
+                            return s1.getID() - s2.getID();
+                        }else{
+                            return s1.getName().compareTo(s2.getName());
+                        }
+
+                        }
+                        else{
+                            return Double.compare(s2.getCGPA(),s1.getCGPA());
+                        }
+        });
         for(String event:events){
-            
             if(event.equals("SERVED")){
-                if(students.size()>0){
-                     students.remove(0);
-                }
+                students.poll();
             }else{
-                String[] arr=event.split(" ");
+                 String[] arr=event.split(" ");
                 String name=arr[1];
                 double cgpa=Double.parseDouble(arr[2]);
                 int id=Integer.parseInt(arr[3]);
-                students.add(new Student(id,name,cgpa));
-                java.util.Collections.sort(students,new Student());
+                students.add(new Student(id,name,cgpa));   
             }
         }
-       
-        return students;
+        List<Student> studentList = new ArrayList<Student>();
+        int size = students.size();
+        for(int i=0; i<size; i++){
+            studentList.add(students.poll());
+        }
+        return studentList;
     }
 }
 
