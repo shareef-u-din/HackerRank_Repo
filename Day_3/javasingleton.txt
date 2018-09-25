@@ -1,0 +1,21 @@
+import java.io.*;
+import java.util.*;
+import java.text.*;
+import java.math.*;
+import java.util.regex.*;
+import java.lang.reflect.*;
+
+
+class Singleton{
+    private static Singleton singleTon=null;
+    public static String str=null;
+    public static Singleton getSingleInstance() {
+      if(singleTon==null){
+          singleTon=new Singleton();
+      }
+        return singleTon;
+    }
+    /** Don't let anyone else instantiate this class */
+    private Singleton() {}
+
+}
