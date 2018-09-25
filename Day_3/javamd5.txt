@@ -1,0 +1,30 @@
+import java.util.Scanner;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+public class Solution {
+    static String getMD5(String str){
+          String hashtext =null;
+       try{
+           MessageDigest messageDigest=MessageDigest.getInstance("MD5");
+           byte[] md = messageDigest.digest(str.getBytes());
+           BigInteger num = new BigInteger(1, md);
+          hashtext = num.toString(16);
+            while (hashtext.length() < 32) {
+                hashtext = "0" + hashtext;
+            }
+            
+       }
+        catch (NoSuchAlgorithmException e) {
+        }
+        return hashtext;
+    }
+    public static void main(String[] args) {
+        Scanner sc=new Scanner(System.in);
+        String input=sc.next();
+        sc.close();
+        System.out.println(getMD5(input));
+        
+    }
+}
