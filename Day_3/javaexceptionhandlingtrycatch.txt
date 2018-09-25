@@ -1,0 +1,25 @@
+import java.io.*;
+import java.util.*;
+
+public class Solution {
+
+    public static void main(String[] args) {
+       Scanner sc=new Scanner(System.in);
+        int num1=0,num2=0;
+        try{
+           num1=sc.nextInt();
+           num2=sc.nextInt();
+           System.out.println(num1/num2);
+        }catch(InputMismatchException ime){
+            System.out.println(ime.getClass().getName());
+        }
+       catch(ArithmeticException ae){
+            System.out.println(ae.getClass().getName()+": "+ae.getMessage());
+        }
+        finally{
+            if(sc!=null){
+                sc.close();
+            }
+        }
+    }
+}
