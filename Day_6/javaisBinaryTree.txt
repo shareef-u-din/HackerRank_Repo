@@ -1,0 +1,25 @@
+
+    boolean checkBST(Node root) {
+      List<Integer> arr=new ArrayList<Integer>();
+        inOrder(root,arr);
+        return  isSorted(arr);
+    }
+public static void inOrder(Node root, List<Integer> arr) {
+        if(root == null){
+            return;
+        }
+        inOrder(root.left,arr);
+        arr.add(root.data);
+        inOrder(root.right,arr);
+    }
+public static boolean isSorted(List<Integer> array) {
+    boolean result = true;
+    for(int i = 1; i < array.size(); i++)
+    {
+        if(array.get(i-1) >= array.get(i))
+        {
+            return false;
+        }
+    }
+    return result;
+}
