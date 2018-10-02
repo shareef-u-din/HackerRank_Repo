@@ -1,0 +1,110 @@
+import java.io.*;
+import java.util.*;
+
+ class MinHeap
+{
+    private int[] Heap;
+    private int size;
+    private int maxsize;
+    public MinHeap() {
+        
+    }
+    public MinHeap(int maxsize)
+    {
+        this.maxsize = maxsize;
+        this.size = 0;
+        Heap = new int[this.maxsize + 1];
+    }
+ 
+    int parent(int i) { return (i-1)/2; } 
+  
+    int left(int i) { return (2*i + 1); } 
+  
+    int right(int i) { return (2*i + 2); } 
+
+    private void swap(int fpos, int spos)
+    {
+        int tmp;
+        tmp = Heap[fpos];
+        Heap[fpos] = Heap[spos];
+        Heap[spos] = tmp;
+    }
+ 
+    private void minHeapify(int i)
+    {
+        int l = left(i); 
+        int r = right(i); 
+        int smallest = i; 
+        if (l < size && Heap[l] < Heap[i]) 
+            smallest = l; 
+        if (r < size && Heap[r] < Heap[smallest]) 
+            smallest = r; 
+        if (smallest != i) 
+        { 
+            swap(i, smallest); 
+            minHeapify(smallest); 
+        } 
+    }
+ 
+    public void insert(int element)
+    {
+        if (size == maxsize) {  return; } 
+        
+        size++; 
+        int i = size - 1; 
+        Heap[i] = element; 
+        
+        while (i != 0 && Heap[parent(i)] > Heap[i]) 
+        { 
+           swap((i), parent(i)); 
+           i = parent(i); 
+        }  
+    }
+ 
+    public void print()
+    {
+        maxsize--;
+        System.out.println(Heap[0]);
+    }
+    public void remove(int value)
+    {
+        int index=0;
+        for(int x:Heap){
+            if(x==value){
+                break;
+            }
+            index++;
+        }
+        
+        int popped = Heap[size-1];
+        Heap[index]=popped;
+        size--;
+        minHeapify(index);
+    }
+}
+public class Solution {
+
+    public static void main(String[] args) {
+        
+        
+        Scanner sc=new Scanner(System.in);
+        int testCases=sc.nextInt();
+        MinHeap mh=new MinHeap(testCases);
+        while(testCases-- >0){
+            int input=sc.nextInt();
+            if(input == 1) {
+                int x=sc.nextInt();
+                mh.insert(x);
+            }else if(input == 2) {
+                int x=sc.nextInt();
+                mh.remove(x);
+            }else{
+                mh.print();
+            }
+           
+        }
+        sc.close();
+        
+        
+    }
+}
