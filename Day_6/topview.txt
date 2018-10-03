@@ -1,0 +1,98 @@
+import java.util.*;
+import java.io.*;
+
+class Node {
+    Node left;
+    Node right;
+    int data;
+    
+    Node(int data) {
+        this.data = data;
+        left = null;
+        right = null;
+    }
+}
+
+class Solution {
+static class NodeData {
+    Node node;
+    int height,distance;
+    public NodeData() {
+        this.node=new Node(0);
+        this.height=0;
+        this.distance=0;
+    }
+    public NodeData(Node n,int h,int d) {
+        this.node=n;
+        this.height=h;
+        this.distance=d;
+    }
+}
+public static void topView(Node root) {
+        Node temp=root;
+         Map<Integer, ArrayList<Integer>> map = new TreeMap<Integer, ArrayList<Integer>>();
+         NodeData nodeData=new NodeData();
+         nodeData.node=root;
+         fillMap(nodeData,map);
+        for (Map.Entry<Integer, ArrayList<Integer>> entry : map.entrySet())
+          {
+               int key = entry.getKey();
+               ArrayList<Integer> value = entry.getValue();
+               System.out.print(value.get(1)+" ");
+          }
+      
+    }
+    public static void fillMap(NodeData nodeData,Map map){
+    //check if there is node already present
+        ArrayList<Integer> list=(ArrayList)map.get(nodeData.distance);
+        ArrayList<Integer> list1=new ArrayList<Integer>();
+        if(list!=null){
+        
+        
+            if(nodeData.height<list.get(0))
+            {
+                list1.add(nodeData.height);
+                list1.add(nodeData.node.data);
+                map.put(nodeData.distance,list1);
+            }
+        }
+        else{
+                list1.add(nodeData.height);
+                list1.add(nodeData.node.data);
+                map.put(nodeData.distance,list1);
+        }
+        if(nodeData.node.left != null)
+            fillMap(new NodeData(nodeData.node.left,nodeData.height+1,nodeData.distance -1),map);
+        if(nodeData.node.right != null)
+            fillMap(new NodeData(nodeData.node.right,nodeData.height+1,nodeData.distance +1),map);
+        
+        
+    }
+	public static Node insert(Node root, int data) {
+        if(root == null) {
+            return new Node(data);
+        } else {
+            Node cur;
+            if(data <= root.data) {
+                cur = insert(root.left, data);
+                root.left = cur;
+            } else {
+                cur = insert(root.right, data);
+                root.right = cur;
+            }
+            return root;
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scan = new Scanner(System.in);
+        int t = scan.nextInt();
+        Node root = null;
+        while(t-- > 0) {
+            int data = scan.nextInt();
+            root = insert(root, data);
+        }
+        scan.close();
+        topView(root);
+    }	
+}
