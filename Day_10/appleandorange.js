@@ -23,13 +23,24 @@ function readLine() {
 }
 
 // Complete the countApplesAndOranges function below.
-function countApplesAndOranges(s, t, a, b, apples, oranges) {
-    let dapple=a-s;
-    let dorange=b-t;
-    var appleArray=apples.filter(val => (val < 0 && val >= dapple));
-    var orangeArray=oranges.filter(val => (val > 0 && val >= dorange));
-    console.log(appleArray.length);
-    console.log(orangeArray.length);
+function countApplesAndOranges(s, t, a, b, apples, oranges, m, n) {
+
+    var arr = [0,0];
+    
+    for(var i in apples) {
+        apples[i] = apples[i] + a;
+        if( (apples[i] >= s) && (apples[i] <= t) ) {
+            arr[0]++;
+        }
+    }
+    for(var i in oranges) {
+        oranges[i] = oranges[i] + b;
+        if( (oranges[i] >= s) && (oranges[i] <= t) ) {
+            arr[1]++;
+        }
+    }
+    console.log(arr[0] + '\n' + arr[1]);
+
 }
 
 function main() {
@@ -55,5 +66,5 @@ function main() {
 
     const oranges = readLine().split(' ').map(orangesTemp => parseInt(orangesTemp, 10));
 
-    countApplesAndOranges(s, t, a, b, apples, oranges);
+    countApplesAndOranges(s, t, a, b, apples, oranges,m,n);
 }
