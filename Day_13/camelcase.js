@@ -24,18 +24,30 @@ function readLine() {
     return inputString[currentLine++];
 }
 
+function isUpper(aChar)
+   {
+      var myCharCode = aChar.charCodeAt(0);
+   
+      if((myCharCode > 64) && (myCharCode <  91))
+      {
+         return true;
+      }
+   
+   return false;
+   }
+
 // Complete the camelcase function below.
 function camelcase(s) {
-
-    var counter = 1;
-    for(var i = 0; i < s.length; i++) {
-        var ch = s.charAt(i);
-        if( ch == ch.toUpperCase() ) {
-            counter++;
-        }
+    var input=[];
+    var count =0;
+    for(let i=0;i<s.length;i++) {
+        input.push(s.charAt(i));
     }
-
-    return counter;
+    for(let i=0;i<input.length;i++) {
+        if(isUpper(input[i]))
+            count++;
+    }
+    return count+1;
 }
 
 function main() {
