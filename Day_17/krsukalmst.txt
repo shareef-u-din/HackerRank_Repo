@@ -1,0 +1,138 @@
+import java.io.*;
+import java.math.*;
+import java.security.*;
+import java.text.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.function.*;
+import java.util.regex.*;
+import java.util.stream.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+
+class Result {
+     // A class to represent a subset for union-find 
+    static class subset 
+    { 
+        int parent, rank; 
+    }; 
+   // A utility function to find set of an element i 
+    // (uses path compression technique) 
+    static int find(subset subsets[], int i) 
+    { 
+        // find root and make root as parent of i (path compression) 
+        if (subsets[i].parent != i) 
+            subsets[i].parent = find(subsets, subsets[i].parent); 
+  
+        return subsets[i].parent; 
+    } 
+  
+    // A function that does union of two sets of x and y 
+    // (uses union by rank)
+    static void Union(subset subsets[], int x, int y) 
+    { 
+        int xroot = find(subsets, x); 
+        int yroot = find(subsets, y); 
+  
+        // Attach smaller rank tree under root of high rank tree 
+        // (Union by Rank) 
+        if (subsets[xroot].rank < subsets[yroot].rank) 
+            subsets[xroot].parent = yroot; 
+        else if (subsets[xroot].rank > subsets[yroot].rank) 
+            subsets[yroot].parent = xroot; 
+  
+        // If ranks are same, then make one as root and increment 
+        // its rank by one 
+        else
+        { 
+            subsets[yroot].parent = xroot; 
+            subsets[xroot].rank++; 
+        } 
+    } 
+    
+
+    public static int kruskals(int gNodes, int[][] gfromToWeight) {
+        int len=gfromToWeight.length;
+         sortbyColumn(gfromToWeight, 2); 
+         subset subsets[] = new subset[len]; 
+        for(int i=0; i<len; ++i) 
+            subsets[i]=new subset(); 
+        for (int v = 0; v < len; ++v) 
+        { 
+            subsets[v].parent = v; 
+            subsets[v].rank = 0; 
+        } 
+        // System.out.println("After Sorting");
+        // for(int i=0;i<gfromToWeight.length;i++) {
+        //     System.out.println(gfromToWeight[i][0]+" "+gfromToWeight[i][1]+" "+gfromToWeight[i][2]);
+        // }
+        int counter=0;
+        for(int i=0;i<len;i++) {
+            int u = find(subsets, gfromToWeight[i][0]); 
+            int v = find(subsets, gfromToWeight[i][1]); 
+            if (u != v) 
+            { 
+                 counter=counter+gfromToWeight[i][2];
+                Union(subsets, u, v); 
+            } 
+           
+        }
+     
+        
+    return counter;
+    }
+     // Function to sort by column 
+    public static void sortbyColumn(int arr[][], int col) 
+    { 
+        // Using built-in sort function Arrays.sort 
+        Arrays.sort(arr, new Comparator<int[]>() { 
+            
+          @Override              
+          // Compare values according to columns 
+          public int compare(final int[] entry1,  
+                             final int[] entry2) { 
+              if(entry1[col] == entry2[col]){
+                  return 0;
+              }
+  
+            if (entry1[col] > entry2[col]) 
+                return 1; 
+            else
+                return -1; 
+          } 
+        });  // End of function call sort(). 
+    } 
+
+}
+
+public class Solution {
+    public static void main(String[] args) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(System.getenv("OUTPUT_PATH")));
+
+        String[] gNodesEdges = bufferedReader.readLine().replaceAll("\\s+$", "").split(" ");
+
+        int gNodes = Integer.parseInt(gNodesEdges[0]);
+        int gEdges = Integer.parseInt(gNodesEdges[1]);
+
+        int[][] fromToWeight = new int[gEdges][3];
+        IntStream.range(0, gEdges).forEach(i -> {
+            try {
+            String[] gFromToWeight = bufferedReader.readLine().replaceAll("\\s+$", "").split(" ");
+                fromToWeight[i][0]=Integer.parseInt(gFromToWeight[0]);
+                fromToWeight[i][1]=Integer.parseInt(gFromToWeight[1]);
+                fromToWeight[i][2]=Integer.parseInt(gFromToWeight[2]);
+               
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        int res = Result.kruskals(gNodes, fromToWeight);
+        
+        bufferedWriter.write(String.valueOf(res));
+
+        bufferedReader.close();
+        bufferedWriter.close();
+        
+ }
+}
