@@ -1,0 +1,46 @@
+import java.io.*;
+import java.util.*;
+import java.text.*;
+import java.math.*;
+import java.util.regex.*;
+
+public class Solution {
+    
+    static double cliques (int n, int k) {
+        double nk = (double) n/k;
+        double e = (n * n - (n % k) * (Math.ceil(nk) * Math.ceil(nk)) - (k - (n % k)) * (Math.floor(nk) * Math.floor(nk))) / 2;
+
+        return e;
+    }
+
+
+    public static void main(String[] args) throws FileNotFoundException {
+        /* Enter your code here. Read input from STDIN. Print output to STDOUT. Your class should be named Solution. */
+        Scanner in = new Scanner(System.in);
+        
+        int t = in.nextInt();
+        
+        for (int i = 0; i < t; i++) {
+            int n = in.nextInt();
+            int m = in.nextInt();
+
+            int end = n;
+            int start = 1;
+            double e = cliques (n, (start + end) / 2);
+
+            while (true) {
+                if (e < m) {
+                    start = (start + end) / 2;
+                    e = cliques (n, (start + end) / 2);
+                } else {
+                    end = (start + end) / 2;
+                    e = cliques (n, (start + end) / 2);
+                }
+
+                if (start + 1 >= end) break;
+            }
+
+            System.out.println(start + 1);
+        }
+    }
+}
