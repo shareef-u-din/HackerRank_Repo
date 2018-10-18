@@ -1,0 +1,74 @@
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Vector;
+
+public class Solution {
+    
+    public static class Graph {
+        List<Integer> edges[][];
+        
+        public Graph(int size) {
+            edges = new List[1024][size];
+            visited = new boolean[size];
+        }
+
+        public void addEdge(int first, int second , int cost) {
+            List<Integer> e = edges[cost][first];
+            if(e == null){
+                e = new Vector<Integer>();
+                edges[cost][first] = e;
+            }
+            e.add(second);
+        }
+        
+        boolean visited[];
+        
+        public boolean FF(int n , int e , int c){
+            if(n == e)
+                return true;
+            if(visited[n])
+                return false;
+            visited[n] = true;            
+            for(int i = 1 ; i<= c ; i++){
+                if((i & c) != i) continue;
+                if(edges[i][n] == null) continue;
+                for(int j : edges[i][n]){
+                    if(FF(j ,e , c)) return true;
+                }
+            }
+            return false;
+        }
+        
+        public int shortestReach(int start , int end) { // 0 indexed
+            
+            for(int i = 1 ; i< 1024 ; i++){
+                Arrays.fill(visited, false);
+                if(FF(start , end , i))
+                    return i;
+            }
+            return -1;
+        }
+    }
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Graph graph = new Graph(scanner.nextInt());
+        int m = scanner.nextInt();
+        for (int i = 0; i < m; i++) {
+            int u = scanner.nextInt() - 1;
+            int v = scanner.nextInt() - 1;
+            int c = scanner.nextInt();
+            graph.addEdge(u, v , c);
+            if(u != v){
+                
+                graph.addEdge(v, u , c);
+            }
+        }
+        
+        // Find shortest reach from node s
+        int startId = scanner.nextInt() - 1;
+        int endId = scanner.nextInt() - 1;
+        scanner.close();
+        System.out.println(graph.shortestReach(startId , endId));
+    }
+}
