@@ -1,0 +1,477 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.StringTokenizer;
+
+public class CountingOnATree implements Runnable {
+
+	public static final int MAX_SHORTCUT_SIZE = 128;
+
+	private BufferedReader in;
+	private StringTokenizer st;
+	private PrintWriter out;
+
+	private boolean[] globalNodes;
+	private int[] globalColors;
+	private long[][] ansCache;
+
+	private void solve() throws IOException {
+		int n = nextInt();
+		int q = nextInt();
+		int[] c = new int[n];
+		for (int i = 0; i < n; i++) {
+			c[i] = nextInt();
+		}
+		int[] from = new int[n - 1];
+		int[] to = new int[n - 1];
+		for (int i = 0; i < n - 1; i++) {
+			from[i] = nextInt() - 1;
+			to[i] = nextInt() - 1;
+		}
+		int[][] qa = new int[q][2];
+		int[][] qb = new int[q][2];
+		for (int i = 0; i < q; i++) {
+			qa[i][0] = nextInt() - 1;
+			qa[i][1] = nextInt() - 1;
+			qb[i][0] = nextInt() - 1;
+			qb[i][1] = nextInt() - 1;
+		}
+		long[] answer = solve(n, c, from, to, q, qa, qb);
+		for (int i = 0; i < q; i++) {
+			out.println(answer[i]);
+		}
+	}
+
+	private long[] solve(int n, int[] c, int[] from, int[] to, int q, int[][] qa, int[][] qb) {
+		globalNodes = new boolean[n];
+		c = squeeze(c);
+		int[] father = buildTree(n, from, to);
+		int[][] children = collectChildren(n, father);
+		int[] shortcuts = buildShortcuts(n, father);
+		ansCache = new long[shortcuts.length][shortcuts.length];
+		for (long[] ansLine : ansCache) {
+			Arrays.fill(ansLine, -1);
+		}
+		ansCache[0][0] = 1;
+		int[] fatherShortcut = buildShortcatsFather(n, shortcuts, father, children);
+		int[][] shNca = buildShortcutsNca(shortcuts, fatherShortcut, father);
+		int[][] shPathColors = buildShortPathColors(shortcuts, fatherShortcut, father, c);
+		int[] depth = buildDepth(n, children);
+
+		long[] answer = new long[q];
+		for (int i = 0; i < q; i++) {
+			answer[i] = getAnswer(qa[i], qb[i], c, father, fatherShortcut, shortcuts, shNca, shPathColors, depth);
+		}
+		return answer;
+	}
+
+	private int[] buildDepth(int n, int[][] children) {
+		int[] result = new int[n];
+		buildDepthGo(0, 0, result, children);
+		return result;
+	}
+
+	private void buildDepthGo(int i, int depth, int[] result, int[][] children) {
+		result[i] = depth;
+		for (int j : children[i]) {
+			buildDepthGo(j, depth + 1, result, children);
+		}
+	}
+
+	private long getAnswer(int[] qa, int[] qb, int[] colors, int[] father, int[] fatherShortcut, int[] shortcuts,
+			int[][] shNca, int[][] shPathColors, int[] depth) {
+		int[][] sqa = splitQuery(qa, father, fatherShortcut, shortcuts, shNca, depth);
+		int[][] sqb = splitQuery(qb, father, fatherShortcut, shortcuts, shNca, depth);
+		long answer = 0;
+		for (int[] sqae : sqa) {
+			for (int[] sqbe : sqb) {
+				answer += getAnswerSplitted(sqae, sqbe, colors, father, fatherShortcut, shortcuts, shNca, shPathColors,
+						depth);
+			}
+		}
+		return answer;
+	}
+
+	private long getAnswerSplitted(int[] sqae, int[] sqbe, int[] colors, int[] father, int[] fatherShortcut,
+			int[] shortcuts, int[][] shNca, int[][] shPathColors, int[] depth) {
+		long result = 0;
+		result += getAnswerEndpoints(sqae[0], sqbe[0], colors, father, fatherShortcut, shortcuts, shNca, shPathColors,
+				depth);
+		if (sqae[1] != 0) {
+			result -= getAnswerEndpoints(father[sqae[1]], sqbe[0], colors, father, fatherShortcut, shortcuts, shNca,
+					shPathColors, depth);
+		}
+		if (sqbe[1] != 0) {
+			result -= getAnswerEndpoints(sqae[0], father[sqbe[1]], colors, father, fatherShortcut, shortcuts, shNca,
+					shPathColors, depth);
+		}
+		if (sqae[1] != 0 && sqbe[1] != 0) {
+			result += getAnswerEndpoints(father[sqae[1]], father[sqbe[1]], colors, father, fatherShortcut, shortcuts,
+					shNca, shPathColors, depth);
+		}
+		return result;
+	}
+
+	private long getAnswerEndpoints(int e1, int e2, int[] colors, int[] father, int[] fatherShortcut, int[] shortcuts,
+			int[][] shNca, int[][] shPathColors, int[] depth) {
+		long result = 0;
+
+		int nca = nca(e1, e2, father, fatherShortcut, shortcuts, shNca)[0];
+		int e1s = fatherShortcut[e1];
+		int e2s = fatherShortcut[e2];
+		int e1si = shortcuts[fatherShortcut[e1]];
+		int e2si = shortcuts[fatherShortcut[e2]];
+
+		for (int j = e1; j != e1si; j = father[j]) {
+			globalColors[colors[j]]++;
+		}
+		for (int j = e2; j != e2si; j = father[j]) {
+			result += globalColors[colors[j]];
+		}
+		for (int j = e1; j != e1si; j = father[j]) {
+			globalColors[colors[j]]--;
+		}
+
+		for (int j = e1; j != e1si; j = father[j]) {
+			result += shPathColors[e2s][colors[j]];
+		}
+		for (int j = e2; j != e2si; j = father[j]) {
+			result += shPathColors[e1s][colors[j]];
+		}
+
+		result += getPrecalcedAnswerShortcuts(e1s, e2s, colors, father, fatherShortcut, shortcuts, shNca, shPathColors,
+				depth);
+
+		result -= (depth[nca] + 1);
+
+		return result;
+	}
+
+	private long getPrecalcedAnswerShortcuts(int e1s, int e2s, int[] colors, int[] father, int[] fatherShortcut,
+			int[] shortcuts, int[][] shNca, int[][] shPathColors, int[] depth) {
+		if (ansCache[e1s][e2s] == -1) {
+			long result = 0;
+
+			int e1 = shortcuts[e1s];
+			int e2 = shortcuts[e2s];
+			int t1s = e1 != 0 ? fatherShortcut[father[e1]] : e1s;
+			int t2s = e2 != 0 ? fatherShortcut[father[e2]] : e2s;
+			int e1si = shortcuts[t1s];
+			int e2si = shortcuts[t2s];
+
+			for (int j = e1; j != e1si; j = father[j]) {
+				globalColors[colors[j]]++;
+			}
+			for (int j = e2; j != e2si; j = father[j]) {
+				result += globalColors[colors[j]];
+			}
+			for (int j = e1; j != e1si; j = father[j]) {
+				globalColors[colors[j]]--;
+			}
+
+			for (int j = e1; j != e1si; j = father[j]) {
+				result += shPathColors[t2s][colors[j]];
+			}
+			for (int j = e2; j != e2si; j = father[j]) {
+				result += shPathColors[t1s][colors[j]];
+			}
+
+			result += getPrecalcedAnswerShortcuts(t1s, t2s, colors, father, fatherShortcut, shortcuts, shNca,
+					shPathColors, depth);
+
+			ansCache[e1s][e2s] = result;
+		}
+		return ansCache[e1s][e2s];
+	}
+
+	private int[][] splitQuery(int[] q, int[] father, int[] fatherShortcut, int[] shortcuts, int[][] shNca,
+			int[] depth) {
+		int a = q[0];
+		int b = q[1];
+		int[] c = nca(a, b, father, fatherShortcut, shortcuts, shNca);
+		int[][] result;
+		if (c[1] != -1) {
+			result = new int[][] { { a, c[0] }, { b, c[1] } };
+		} else {
+			result = new int[][] { { a, c[0] } };
+		}
+		for (int[] r : result) {
+			if (depth[r[0]] < depth[r[1]]) {
+				int tmp = r[0];
+				r[0] = r[1];
+				r[1] = tmp;
+			}
+		}
+		return result;
+	}
+
+	private int[] nca(int a, int b, int[] father, int[] fatherShortcut, int[] shortcuts, int[][] shNca) {
+		int shN = shNca[fatherShortcut[a]][fatherShortcut[b]];
+		while (fatherShortcut[a] != shN) {
+			a = shortcuts[fatherShortcut[a]];
+			a = father[a];
+		}
+		int prevB = -1;
+		while (fatherShortcut[b] != shN) {
+			b = shortcuts[fatherShortcut[b]];
+			prevB = b;
+			b = father[b];
+		}
+		int i = a;
+		while (true) {
+			globalNodes[i] = true;
+			if (i == shortcuts[shN]) {
+				break;
+			} else {
+				i = father[i];
+			}
+		}
+		int result = b;
+		while (!globalNodes[result]) {
+			prevB = result;
+			result = father[result];
+		}
+		i = a;
+		while (true) {
+			globalNodes[i] = false;
+			if (i == shortcuts[shN]) {
+				break;
+			} else {
+				i = father[i];
+			}
+		}
+		return new int[] { result, prevB };
+	}
+
+	private int[] squeeze(int[] c) {
+		Map<Integer, Integer> registered = new HashMap<>();
+		int[] result = new int[c.length];
+		for (int i = 0; i < c.length; i++) {
+			if (!registered.containsKey(c[i])) {
+				registered.put(c[i], registered.size());
+			}
+			result[i] = registered.get(c[i]);
+		}
+		globalColors = new int[registered.size()];
+		return result;
+	}
+
+	private int[][] buildShortPathColors(int[] shortcuts, int[] fatherShortcut, int[] father, int[] colors) {
+		int[][] result = new int[shortcuts.length][];
+		for (int i = 0; i < result.length; i++) {
+			result[i] = buildShortPathColors(i, result, shortcuts, fatherShortcut, father, colors);
+		}
+		return result;
+	}
+
+	private int[] buildShortPathColors(int i, int[][] result, int[] shortcuts, int[] fatherShortcut, int[] father,
+			int[] colors) {
+		if (result[i] != null) {
+			return result[i];
+		}
+		result[i] = new int[globalColors.length];
+		result[i][colors[shortcuts[i]]]++;
+		if (i == 0) {
+			return result[i];
+		}
+		int getAnsNode = shortcuts[fatherShortcut[father[shortcuts[i]]]];
+		for (int j = father[shortcuts[i]]; j != getAnsNode; j = father[j]) {
+			result[i][colors[j]]++;
+		}
+		int[] fresult = buildShortPathColors(fatherShortcut[getAnsNode], result, shortcuts, fatherShortcut, father,
+				colors);
+		for (int c = 0; c < fresult.length; c++) {
+			result[i][c] += fresult[c];
+		}
+		return result[i];
+	}
+
+	private int[][] buildShortcutsNca(int[] shortcuts, int[] fatherShortcut, int[] father) {
+		int[][] result = new int[shortcuts.length][shortcuts.length];
+		for (int i = 0; i < result.length; i++) {
+			for (int j = 0; j < i; j++) {
+				result[i][j] = buildShortcutsNca(i, j, shortcuts, fatherShortcut, father);
+				result[j][i] = result[i][j];
+			}
+			result[i][i] = i;
+		}
+		return result;
+	}
+
+	private int buildShortcutsNca(int i, int j, int[] shortcuts, int[] fatherShortcut, int[] father) {
+		boolean[] busy = new boolean[shortcuts.length];
+		while (i > 0) {
+			busy[i] = true;
+			i = fatherShortcut[father[shortcuts[i]]];
+		}
+		busy[0] = true;
+		while (!busy[j]) {
+			j = fatherShortcut[father[shortcuts[j]]];
+		}
+		return j;
+	}
+
+	private int[] buildShortcatsFather(int n, int[] shortcuts, int[] father, int[][] children) {
+		int[] result = new int[n];
+		Arrays.fill(result, -1);
+		for (int i = 0; i < shortcuts.length; i++) {
+			result[shortcuts[i]] = i;
+		}
+		int[] qi = new int[n];
+		int qcnt = 0;
+		qi[qcnt++] = 0;
+		while (qcnt > 0) {
+			int i = qi[--qcnt];
+			if (result[i] == -1) {
+				result[i] = result[father[i]];
+			}
+			for (int j : children[i]) {
+				qi[qcnt++] = j;
+			}
+		}
+		return result;
+	}
+
+	private int[] buildShortcuts(int n, int[] father) {
+		int sc = 1;
+		int[] shortcutid = new int[n];
+		Arrays.fill(shortcutid, -1);
+
+		int[] power = new int[n];
+		for (int i = 1; i < n; i++) {
+			power[father[i]]++;
+		}
+
+		int[] maxdist = new int[n];
+		int[] qi = new int[n];
+		int qcnt = 0;
+		for (int i = 0; i < n; i++) {
+			if (power[i] == 0) {
+				qi[qcnt++] = i;
+			}
+		}
+
+		while (true) {
+			int i = qi[--qcnt];
+			if (i == 0) {
+				break;
+			}
+			if (maxdist[i] == MAX_SHORTCUT_SIZE) {
+				shortcutid[i] = sc++;
+				maxdist[i] = 0;
+			}
+			maxdist[father[i]] = Math.max(maxdist[father[i]], maxdist[i] + 1);
+			power[father[i]]--;
+			if (power[father[i]] == 0) {
+				qi[qcnt++] = father[i];
+			}
+		}
+		if (qcnt != 0) {
+			throw new RuntimeException("Internal botva!");
+		}
+		shortcutid[0] = 0;
+
+		int[] result = new int[sc];
+		for (int i = 0; i < n; i++) {
+			if (shortcutid[i] != -1) {
+				result[shortcutid[i]] = i;
+			}
+		}
+		return result;
+	}
+
+	private int[][] collectChildren(int n, int[] father) {
+		int[] power = new int[n];
+		for (int i = 1; i < n; i++) {
+			power[father[i]]++;
+		}
+		int[][] children = new int[n][];
+		for (int i = 0; i < n; i++) {
+			children[i] = new int[power[i]];
+			power[i] = 0;
+		}
+		for (int i = 1; i < n; i++) {
+			children[father[i]][power[father[i]]++] = i;
+		}
+		return children;
+	}
+
+	private int[] buildTree(int n, int[] from, int[] to) {
+		int[] power = new int[n];
+		for (int i = 0; i < from.length; i++) {
+			power[from[i]]++;
+			power[to[i]]++;
+		}
+		int[][] g = new int[n][];
+		for (int i = 0; i < n; i++) {
+			g[i] = new int[power[i]];
+			power[i] = 0;
+		}
+		for (int i = 0; i < from.length; i++) {
+			g[from[i]][power[from[i]]++] = to[i];
+			g[to[i]][power[to[i]]++] = from[i];
+		}
+		int[] father = new int[n];
+		buildTreeGo(0, -1, father, g);
+		return father;
+	}
+
+	private void buildTreeGo(int i, int f, int[] father, int[][] g) {
+		father[i] = f;
+		for (int j : g[i]) {
+			if (j != f) {
+				buildTreeGo(j, i, father, g);
+			}
+		}
+	}
+
+	@Override
+	public void run() {
+		try {
+			solve();
+		} catch (Throwable e) {
+			e.printStackTrace();
+			System.exit(1);
+		} finally {
+			out.close();
+		}
+	}
+
+	private int nextInt() throws IOException {
+		return Integer.parseInt(next());
+	}
+
+	private String next() throws IOException {
+		while (!st.hasMoreTokens()) {
+			String line = in.readLine();
+			if (line == null) {
+				return null;
+			}
+			st = new StringTokenizer(line);
+		}
+		return st.nextToken();
+	}
+
+	public CountingOnATree(String filename) {
+		// try {
+		in = new BufferedReader(new InputStreamReader(System.in));
+		// in = new BufferedReader(new FileReader(filename + ".in"));
+		st = new StringTokenizer("");
+		out = new PrintWriter(System.out);
+		// out = new PrintWriter(new FileWriter(filename + ".out"));
+		// } catch (IOException e) {
+		// e.printStackTrace();
+		// System.exit(1);
+		// }
+	}
+
+	public static void main(String[] args) {
+		Locale.setDefault(Locale.US);
+		new CountingOnATree("data").run();
+	}
+}

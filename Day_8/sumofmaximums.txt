@@ -1,0 +1,261 @@
+import java.io.OutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.io.Writer;
+import java.io.OutputStreamWriter;
+import java.io.BufferedReader;
+import java.util.Collections;
+import java.io.InputStream;
+
+/**
+ * Built using CHelper plug-in
+ * Actual solution is at the top
+ */
+public class Main {
+    public static void main(String[] args) {
+        InputStream inputStream = System.in;
+        OutputStream outputStream = System.out;
+        InputReader in = new InputReader(inputStream);
+        OutputWriter out = new OutputWriter(outputStream);
+        SegmentMax solver = new SegmentMax();
+        solver.solve(1, in, out);
+        out.close();
+    }
+
+    static class SegmentMax {
+        int n;
+        int m;
+        int[] a;
+        int[] l;
+        int[] r;
+        int[] leftMax;
+        int[] rightMax;
+        final List<Event> events = new ArrayList<>();
+        final int inf = (int) 1e9 + 100;
+
+        public void solve(int testNumber, InputReader in, OutputWriter out) {
+            n = in.readInt();
+            m = in.readInt();
+            a = new int[n];
+            for (int i = 0; i < n; i++) {
+                a[i] = in.readInt();
+            }
+            l = new int[m];
+            r = new int[m];
+            for (int i = 0; i < m; i++) {
+                l[i] = in.readInt() - 1;
+                r[i] = in.readInt() - 1;
+            }
+            leftMax = new int[n];
+            rightMax = new int[n];
+            final int[] stackValue = new int[n + 1], stackPos = new int[n + 1];
+            int stackLen = 0;
+            stackValue[stackLen] = inf;
+            stackPos[stackLen++] = -1;
+            for (int i = 0; i < n; i++) {
+                while (stackLen > 0 && stackValue[stackLen - 1] <= a[i]) {
+                    stackLen--;
+                }
+                leftMax[i] = stackPos[stackLen - 1];
+                stackPos[stackLen] = i;
+                stackValue[stackLen++] = a[i];
+            }
+            stackLen = 0;
+            stackValue[stackLen] = inf;
+            stackPos[stackLen++] = n;
+            for (int i = n - 1; i >= 0; i--) {
+                while (stackLen > 0 && stackValue[stackLen - 1] < a[i]) {
+                    stackLen--;
+                }
+                rightMax[i] = stackPos[stackLen - 1];
+                stackPos[stackLen] = i;
+                stackValue[stackLen++] = a[i];
+            }
+            for (int i = 0; i < n; i++) {
+                int l = leftMax[i] + 1, r = rightMax[i] - 1;
+                addQuad(0, l - 1, r + 1, n - 1, 0, 0, 0, 1L * (i - l + 1) * (r - i + 1) * a[i]);
+                addQuad(l, i, r + 1, n - 1, 0, 1L * (i - r - 1) * a[i], 0, 1L * (i + 1) * (r - i + 1) * a[i]);
+                addQuad(0, l - 1, i, r, 0, 0, 1L * (i - l + 1) * a[i], 1L * (1 - i) * (i - l + 1) * a[i]);
+                addQuad(l, i, i, r, -a[i], 1L * (i - 1) * a[i], 1L * (i + 1) * a[i], (-1L * i * i + 1) * a[i]);
+            }
+            for (int i = 0; i < m; i++) {
+                events.add(Event.point(l[i], i));
+            }
+            Collections.sort(events);
+            final Fenwick LR = new Fenwick(n), L = new Fenwick(n), R = new Fenwick(n), C = new Fenwick(n);
+            final long[] ansLR = new long[m], ansL = new long[m], ansR = new long[m], ansC = new long[m];
+            for (Event e : events) {
+                if (e.type == -1 || e.type == 1) {
+                    LR.update(e.l, e.r, e.LR * -e.type);
+                    L.update(e.l, e.r, e.L * -e.type);
+                    R.update(e.l, e.r, e.R * -e.type);
+                    C.update(e.l, e.r, e.C * -e.type);
+                }
+                if (e.type == 0) {
+                    int r = this.r[e.index];
+                    ansLR[e.index] = LR.getValue(r);
+                    ansL[e.index] = L.getValue(r);
+                    ansR[e.index] = R.getValue(r);
+                    ansC[e.index] = C.getValue(r);
+                }
+            }
+            for (int i = 0; i < m; i++) {
+                out.printLine(ansLR[i] * l[i] * r[i] + ansL[i] * l[i] + ansR[i] * r[i] + ansC[i]);
+            }
+        }
+
+        void addQuad(int l, int r, int b, int t, long LR, long L, long R, long C) {
+            if (l > r || b > t) {
+                return;
+            }
+            events.add(Event.quadStart(l, b, t, LR, L, R, C));
+            events.add(Event.quadEnd(r, b, t, LR, L, R, C));
+        }
+
+        static class Event implements Comparable<Event> {
+            public final int x;
+            public final int type;
+            public final int l;
+            public final int r;
+            public final long LR;
+            public final long L;
+            public final long R;
+            public final long C;
+            public final int index;
+
+            public Event(int x, int type, int l, int r, long LR, long l1, long r1, long c, int index) {
+                this.x = x;
+                this.type = type;
+                this.l = l;
+                this.r = r;
+                this.LR = LR;
+                L = l1;
+                R = r1;
+                C = c;
+                this.index = index;
+            }
+
+            public static Event quadStart(int x, int l, int r, long LR, long L, long R, long C) {
+                return new Event(x, -1, l, r, LR, L, R, C, -1);
+            }
+
+            public static Event quadEnd(int x, int l, int r, long LR, long L, long R, long C) {
+                return new Event(x, 1, l, r, LR, L, R, C, -1);
+            }
+
+            public static Event point(int x, int index) {
+                return new Event(x, 0, -1, -1, -1, -1, -1, -1, index);
+            }
+
+
+            public int compareTo(Event o) {
+                int k = Integer.compare(x, o.x);
+                return k != 0 ? k : Integer.compare(type, o.type);
+            }
+
+        }
+
+    }
+
+    static class OutputWriter {
+        private PrintWriter writer;
+
+        public OutputWriter(Writer writer) {
+            this.writer = new PrintWriter(writer);
+        }
+
+        public OutputWriter(OutputStream stream) {
+            this(new OutputStreamWriter(stream));
+        }
+
+        public void print(Object... args) {
+            for (Object arg : args) {
+                writer.print(arg);
+            }
+        }
+
+        public void printLine(Object... args) {
+            print(args);
+            writer.println();
+        }
+
+        void close() {
+            writer.close();
+        }
+
+    }
+
+    static class InputReader {
+        private BufferedReader reader;
+        private StringTokenizer tokenizer;
+
+        public InputReader(Reader reader) {
+            this.reader = new BufferedReader(reader);
+        }
+
+        public InputReader(InputStream stream) {
+            this(new InputStreamReader(stream));
+        }
+
+        public String nextLine() {
+            try {
+                return reader.readLine();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public String readWord() {
+            while (tokenizer == null || !tokenizer.hasMoreTokens()) {
+                tokenizer = new StringTokenizer(nextLine());
+            }
+            return tokenizer.nextToken();
+        }
+
+        public int readInt() {
+            return Integer.parseInt(readWord());
+        }
+
+    }
+
+    static class Fenwick {
+        public final int n;
+        public final long[] a;
+
+        public Fenwick(int n) {
+            this.n = n;
+            a = new long[n];
+        }
+
+        public long getValue(int r) {
+            long result = 0;
+            for (; r >= 0; r = (r & (r + 1)) - 1) {
+                result += a[r];
+            }
+            return result;
+        }
+
+        public void update(int l, int r, long value) {
+            if (l > r) {
+                return;
+            }
+            update(r + 1, -value);
+            update(l, value);
+        }
+
+        public void update(int x, long value) {
+            for (; x < n; x = x | (x + 1)) {
+                a[x] += value;
+            }
+        }
+
+    }
+}

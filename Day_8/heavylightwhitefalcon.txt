@@ -1,0 +1,166 @@
+import java.io.*;
+import java.util.*;
+import java.text.*;
+import java.math.*;
+import java.util.regex.*;
+
+public class Solution {
+
+ 
+    // array to store values for each node(vertices)
+    static int[] v;
+    // array to store connections (edges)
+    static ArrayList<Integer>[] e;
+    
+    // some node with single connection will be tree root
+    static int root; 
+    // direction to reach root for each node
+    static int[] dirToRoot;
+    // distance to root
+    static int[] distToRoot;
+    
+    // maximum node value 
+    static int totalMax = 0;
+    
+    static void markRoot(){
+        for(int i=0; i<v.length; i++){
+            if(e[i].size()==1){
+                root = i;
+                break;
+            }
+        }
+    }
+    
+    static void markPathToRoot(int node, int dist, boolean[] visited){
+        distToRoot[node] = dist;
+        for(Integer item : e[node]){
+            int index = item.intValue();
+            if(visited[index]==false){
+                dirToRoot[index] = node;
+                visited[index] = true;
+                markPathToRoot(index, dist+1, visited);
+            }
+        }
+    }
+    
+    static int findMax2(int start, int finish){
+        int sDistance = distToRoot[start];
+        int fDistance = distToRoot[finish];
+
+        int sIndex = start;
+        int fIndex = finish;
+        int max = Math.max(v[sIndex], v[fIndex]);
+        
+        // decrease distance from the one that is more far from root
+        while(sDistance>fDistance && max<totalMax){
+            sIndex = dirToRoot[sIndex];
+            max = max >= v[sIndex] ? max : v[sIndex];
+            sDistance--;
+        }
+        while(fDistance>sDistance && max<totalMax){
+            fIndex = dirToRoot[fIndex];
+            max = max >= v[fIndex] ? max : v[fIndex];
+            fDistance--;
+        }
+
+        // run both of them
+        while(sIndex!=fIndex){
+            fIndex = dirToRoot[fIndex];
+            sIndex = dirToRoot[sIndex];
+            max = max >= v[fIndex] ? max : v[fIndex];
+            max = max >= v[sIndex] ? max : v[sIndex];
+            if(sIndex==root || max==totalMax)
+                break;
+        }
+        return Math.max(max, v[sIndex]);
+    }
+    
+    // calculate distance to root node from each node
+    static void resetRoot(){
+        // direction to the root of tree for each node
+        dirToRoot = new int[v.length];
+        distToRoot= new int[v.length];
+        
+        // mark node with only one edge as root
+        markRoot();
+//        System.out.println("root="+root);
+        
+        dirToRoot[root] = root;
+        boolean[] visited = new boolean[v.length];
+        visited[root] = true;
+        markPathToRoot(root, 0, visited);
+    }
+    
+    public static void main(String[] args) {
+        Reader sc = new Reader();
+        sc.init(System.in);
+        int N = sc.nextInt();
+        int Q = sc.nextInt();
+        
+        // array to store values for each node(vertices)
+        v = new int[N];
+        // array to store connections (edges)
+        e = new ArrayList[N];
+
+        for(int i=0; i<N; i++)
+            e[i] = new ArrayList<Integer>(2);
+        
+        for(int i=0; i<N-1; i++){
+            int v1 = sc.nextInt();
+            int v2 = sc.nextInt();
+            // add to both because undirectional
+            e[v1].add(v2);
+            e[v2].add(v1);
+        }
+        
+        resetRoot();
+        
+        // read queries
+        while(Q-->0){
+            int type = sc.nextInt();
+            if(type==1){
+                int node    = sc.nextInt();
+                int value   = sc.nextInt();
+                v[node] = value;
+                totalMax = value > totalMax ? value : totalMax;
+            }else{
+                int start   = sc.nextInt();
+                int finish  = sc.nextInt();
+                //search for solution
+                System.out.println( findMax2(start, finish) );
+            }
+        }
+    }
+    
+// code from internet    
+/** Class for buffered reading int and double values */
+static class Reader {
+    static BufferedReader reader;
+    static StringTokenizer tokenizer;
+
+    /** call this method to initialize reader for InputStream */
+    static void init(InputStream input) {
+        reader = new BufferedReader( new InputStreamReader(input) );
+        tokenizer = new StringTokenizer("");
+    }
+
+    /** get next word */
+    static String next() {
+        while ( ! tokenizer.hasMoreTokens() ) {
+            //TODO add check for eof if necessary
+            try{
+                tokenizer = new StringTokenizer( reader.readLine() );
+            }catch(Exception e){}
+        }
+        return tokenizer.nextToken();
+    }
+
+    static int nextInt() {
+        return Integer.parseInt( next() );
+    }
+    
+    static double nextDouble() {
+        return Double.parseDouble( next() );
+    }
+}
+}

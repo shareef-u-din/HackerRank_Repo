@@ -1,0 +1,211 @@
+import java.util.*;
+
+public class Solution {
+
+    private static final int MOD = 1000000007;
+
+    private static int fibmod(long n) {
+        n = n % 2000000016;
+        long a11 = 1, a12 = 1, a22 = 0,
+             r11 = 1, r12 = 0, r22 = 1,
+             nv11, nv12, nv22;
+        while (n > 0) {
+            if (n % 2 == 1) {
+                nv11 = r11 * a11 + r12 * a12;
+                nv12 = r12 * a11 + r22 * a12;
+                nv22 = r12 * a12 + r22 * a22;
+                r11 = nv11 % MOD;
+                r12 = nv12 % MOD;
+                r22 = nv22 % MOD;
+            }
+            nv11 = a11 * a11 + a12 * a12;
+            nv12 = a12 * (a11 + a22);
+            nv22 = a12 * a12 + a22 * a22;
+            a11 = nv11 % MOD;
+            a12 = nv12 % MOD;
+            a22 = nv22 % MOD;
+            n /= 2;
+        }
+        return (int) r12;
+    }
+
+    private static class Update {
+        int count = 1;
+    }
+
+    private static class Node {
+        List<Node> predecessors = new ArrayList<>(17); 
+        int depth;
+        TreeMap<Long, Update> updates = new TreeMap<>();
+
+        void update(final long k) {
+            final Update update = this.updates.get(k);
+            if (update == null) {
+                final Update higher = this.updates.get(k + 1);
+                if (higher != null) {
+                    if (higher.count > 1) {
+                        higher.count--;
+                    } else {
+                        this.updates.remove(k + 1);
+                    }
+                    this.update(k + 2);
+                } else {
+                    final Update lower = this.updates.get(k - 1);
+                    if (lower != null) {
+                        if (lower.count > 1) {
+                            lower.count--;
+                        } else {
+                            this.updates.remove(k - 1);
+                        }
+                        this.updates.put(k + 1, new Update());
+                    } else {
+                        this.updates.put(k, new Update());
+                    }
+                }
+            } else {
+                update.count++;
+            }
+        }
+
+        void setParent(final Node parent) {
+            this.depth = parent.depth + 1;
+            int predLinkIdx = 0;
+            Node pred = parent;
+            while (true) {
+                this.predecessors.add(pred);
+                if (predLinkIdx < pred.predecessors.size()) {
+                    pred = pred.predecessors.get(predLinkIdx);
+                    predLinkIdx++;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        Node getParent() {
+            if (!this.predecessors.isEmpty()) {
+                return this.predecessors.get(0);
+            } else {
+                return null;
+            }
+        }
+
+        int addedValue(final int upperShift, final int lowerShift) {
+            int result = 0;
+            for (Map.Entry<Long, Update> entry : this.updates.entrySet()) {
+                final long count = entry.getValue().count,
+                           k = entry.getKey();
+                final int inc = (int) (
+                    (count * (MOD + fibmod(k + upperShift + 2) - fibmod(k + lowerShift + 1))) % MOD
+                );
+                result = (result + inc) % MOD;
+            }
+            return result;
+        }
+
+        int queryRange(final Node dividingNode, final boolean incl) {
+            int result = 0,
+                upperShift = 0,
+                lowerShift = 0;
+            boolean incLowerShift = false;
+            Node node = this;
+            while (node != null) {
+                if (node == dividingNode) {
+                    incLowerShift = true;
+                    lowerShift = incl ? 0 : 1;
+                }
+                result = (result + node.addedValue(upperShift, lowerShift)) % MOD;
+                upperShift++;
+                if (incLowerShift) {
+                    lowerShift++;
+                }
+                node = node.getParent();
+            }
+            return result;
+        }
+
+        Node fastUpward(int upSteps) {
+            Node result = this;
+            int predLinkIdx = 0;
+            while (upSteps > 0) {
+                if (upSteps % 2 == 1) {
+                    result = result.predecessors.get(predLinkIdx);
+                }
+                predLinkIdx++;
+                upSteps = upSteps / 2;
+            }
+            return result;
+        }
+
+        Node commonPredecessor(Node other) { 
+            Node node = this;
+            int maxPredLinkIdx = 16;
+            while (node != other) {
+                int predLinkIdx = node.predecessors.size() - 1;
+                if (predLinkIdx > maxPredLinkIdx) {
+                    predLinkIdx = maxPredLinkIdx;
+                }
+                final Node trialNode = node.predecessors.get(predLinkIdx),
+                           trialOther = other.predecessors.get(predLinkIdx);
+                if (trialNode != trialOther) {
+                    node = trialNode;
+                    other = trialOther;
+                    maxPredLinkIdx = predLinkIdx;
+                } else if (predLinkIdx > 0) {
+                    maxPredLinkIdx = predLinkIdx - 1;
+                } else {
+                    return trialNode;
+                }
+            }
+            return node;
+        }
+
+    }
+
+    public static void main(String[] args) {
+        Scanner in = new Scanner(System.in);
+        final int N = in.nextInt(),
+                  M = in.nextInt();
+        Node[] tree = new Node[N];
+        for (int i = 0; i < N; i++) {
+            tree[i] = new Node();
+        }
+        for (int n = 1; n < N; n++) {
+            tree[n].setParent(tree[in.nextInt() - 1]);
+        }
+        for (int i = 0; i < M; i++) {
+            final String op = in.next();
+            if ("Q".equals(op)) { 
+                final Node node1 = tree[in.nextInt() - 1],
+                           node2 = tree[in.nextInt() - 1];
+                Node n1, n2;
+                final int depthDiff = node1.depth - node2.depth;
+                if (depthDiff > 0) {
+                    n1 = node1.fastUpward(depthDiff);
+                    n2 = node2;
+                } else if (depthDiff < 0) {
+                    n2 = node2.fastUpward(-depthDiff);
+                    n1 = node1;
+                } else {
+                    n1 = node1;
+                    n2 = node2;
+                }
+                final Node commonPred = n1.commonPredecessor(n2);
+                int result;
+                if (commonPred == node1) {
+                    result = node2.queryRange(node1, true);
+                } else if (commonPred == node2) {
+                    result = node1.queryRange(node2, true);
+                } else {
+                    result = (node1.queryRange(commonPred, true) + node2.queryRange(commonPred, false)) % MOD;
+                }
+                System.out.println(result);
+            } else { 
+                final int nodeNum = in.nextInt();
+                final long k = in.nextLong();
+                tree[nodeNum - 1].update(k);
+            }
+        }
+    }
+
+}

@@ -1,0 +1,69 @@
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+public class Solution {
+
+	public static void main(String[] arg) {
+		// System.setIn(new FileInputStream("C:/Test/abc.txt"));
+		Scanner sc = new Scanner(System.in);
+		int T, N;
+		Long a[], w[];
+		T = sc.nextInt();
+
+		for (int t = 1; t <= T; t++) {
+			N = sc.nextInt();
+			a = new Long[N];
+			w = new Long[N];
+
+			for (int i = 0; i < N; i++) {
+				a[i] = sc.nextLong();
+			}
+
+			for (int i = 0; i < N; i++) {
+				w[i] = sc.nextLong();
+			}
+
+			long answer = SolveMaxSumProblem(a, w);
+			System.out.println(answer);
+		}
+		sc.close();
+	}
+
+	private static long SolveMaxSumProblem(Long[] a, Long[] w) {
+		int N = a.length;
+		Long max = 0L, temp_sum;
+
+		TreeMap<Long, Long> tmap = new TreeMap<>();
+		for (int i = 0; i < N; i++) {
+			Entry<Long, Long> lower_entry = tmap.lowerEntry(a[i]);
+			temp_sum = ((lower_entry == null) ? 0L : lower_entry.getValue()) + w[i];
+
+			List<Long> del = new ArrayList<Long>();
+			SortedMap<Long, Long> smap = tmap.tailMap(a[i]);
+			for (Entry<Long, Long> s : smap.entrySet()) {
+				if (s.getValue() > temp_sum)
+					break;
+				del.add(s.getKey());
+			}
+
+			// This Blocked is added separately to avoid
+			// java.util.ConcurrentModificationException.
+			for (Long d : del) {
+				tmap.remove(d);
+			}
+
+			if (!tmap.containsKey(a[i])) {
+				tmap.put(a[i], temp_sum);
+			}
+			if (max < temp_sum) {
+				max = temp_sum;
+			}
+		}
+
+		return max;
+	}
+}
