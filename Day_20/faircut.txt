@@ -1,0 +1,114 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Scanner;
+
+public class Solution {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+		Scanner sc = new Scanner(System.in);
+		
+		int n = sc.nextInt();
+		int k = sc.nextInt();
+		
+		int[] ar = new int[n];
+		
+		for(int i=0; i<n; i++){
+			ar[i] = sc.nextInt();
+		}
+		
+		Arrays.sort(ar);
+		
+		k = Math.min(k, n-k);
+		
+		int l = n-2*k;
+		
+		long res = 0;
+		//int res2 = 0;
+		if(l>0){
+			res = minCut(ar, l/2, n-(l/2));
+			//res2 = minCut2(ar, l/2, n-(l/2));
+		}
+		else{
+			res = minCut(ar, 0, n);
+			//res2 = minCut2(ar, 0, n);
+		}
+		System.out.println(res);
+	}
+	
+	static long minCut(int[] ar, int st, int en){
+		
+		long res = 0;
+		
+		HashSet<Integer> set = new HashSet<Integer>();
+		
+		for(int i=st; i<en; i=i+2){
+			set.add(i);
+		}
+		
+		Iterator<Integer> it = set.iterator();
+		
+		Integer a;
+		
+		while(it.hasNext()){
+			a = it.next();
+			for(int i=0; i<ar.length; i++){
+				if(!set.contains(i)){
+					res += Math.abs(ar[a]-ar[i]);
+				}
+			}
+		}
+		
+		return res;
+	}
+	
+	static int minCut2(int[] ar, int st, int en){
+		
+		int res = 0;
+		
+		ArrayList<Integer> p = new ArrayList<Integer>();
+		ArrayList<Integer> q = new ArrayList<Integer>();
+		boolean swtch = false;
+		int i =0;
+		for(i=st; i<en; i=i+2){
+			if(swtch){
+				p.add(ar[i]);
+				swtch = !swtch;
+			}
+			else{
+				q.add(ar[i]);
+			}
+		}
+		
+		if(i==en){
+			if(swtch){
+				p.add(ar[en-1]);
+			}
+			else{
+				q.add(ar[en-1]);
+			}
+		}
+		
+		for(i=0; i<st+1; i++){
+			p.add(ar[i]);
+		}
+		
+		for(i=en; i<ar.length; i++){
+			p.add(ar[i]);
+		}
+		
+		for(int k:p){
+			for(int j:q){
+				res += Math.abs(k-j);
+			}
+		}
+		
+		return res;
+	}
+	
+
+}
+© 2018 GitHub, Inc
