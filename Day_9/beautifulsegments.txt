@@ -1,0 +1,296 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.BufferedOutputStream;
+import java.util.Arrays;
+
+public class Solution {
+
+    static int N, Q;
+    static int[] A;
+    static Test[] Tests;
+
+   
+    public static void main(String[] args) throws Exception {
+        readDataAndTestsFromInput();
+        getCountsForTests();
+        printResults();
+    }
+
+   
+    private static void readDataAndTestsFromInput() throws Exception {
+        StringBuilder builder = new StringBuilder(100000);
+        String aux = "";
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        while ((aux = reader.readLine()) != null) {
+            builder.append(aux).append(" ");
+        }
+
+        String[] data = builder.toString().split(" ");
+        int idx = 0;
+        N = Integer.parseInt(data[idx++]);
+        Q = Integer.parseInt(data[idx++]);
+
+        A = new int[N];
+        for (int i = 0; i < N; i++) {
+            A[i] = Integer.parseInt(data[idx++]);
+        }
+
+        Tests = new Test[Q];
+        for (int i = 0; i < Q; i++) {
+            Tests[i] = new Test(Integer.parseInt(data[idx++]) - 1,
+                                Integer.parseInt(data[idx++]) - 1,
+                                Integer.parseInt(data[idx++]));
+        }
+    }
+
+   
+    public static void printResults() {
+        StringBuilder sb = new StringBuilder(400000);
+        for (int i = 0; i < Q; i++) {
+            sb.append(Tests[i].count).append("\n");
+        }
+        System.out.print(sb.toString());
+    }
+
+    
+    static class Test {
+        int left, right, limit;
+        int count;
+
+        public Test(int l, int r, int lim) {
+            this.left = l;
+            this.right = r;
+            this.limit = lim;
+            this.count = 0;
+        }
+    }
+
+  
+    static class CompactMatrix {
+        static final int MINUS_KEY = -1;
+        static final int MAX_ROW = 19;
+
+        int[][] keys, counts;
+        int numOfKeys;
+
+        private CompactMatrix(int[][] keys, int[][] counts, int n) {
+            this.keys = keys;
+            this.counts = counts;
+            this.numOfKeys = n;
+        }
+
+        public static CompactMatrix CreateLeftMatrixOfANDFrom(int N, int[] A) {
+            int[][] keys = new int[N][MAX_ROW];
+            int[][] counts = new int[N][MAX_ROW];
+            for (int idx = 0; idx < N; idx++) {
+                keys[idx][0] = A[idx];
+                counts[idx][0] = 1;
+            }
+            int numOfKeys = N;
+
+            for (int idx = 0; idx < N; idx++) {
+                for (int row = 1; row < MAX_ROW; row++) {
+                    keys[idx][row] = MINUS_KEY;
+                }
+            }
+
+            for (int idx = N - 2; idx >= 0; idx--) {
+                int preIdx = idx + 1;
+                int preRow = 0;
+                int row = 0;
+                do {
+                    int nextValue = keys[idx][0] & keys[preIdx][preRow];
+                    if (nextValue == keys[idx][row]) {
+                        counts[idx][row] += counts[preIdx][preRow];
+                    } else {
+                        row += 1;
+                        keys[idx][row] = nextValue;
+                        counts[idx][row] = counts[preIdx][preRow];
+                        numOfKeys += 1;
+                    }
+                    preRow += 1;
+                } while (keys[preIdx][preRow] != -1);
+            }
+            return new CompactMatrix(keys, counts, numOfKeys);
+        }
+
+        public static CompactMatrix CreateRightMatrixOfANDFrom(int N, int[] A) {
+            int[][] keys = new int[N][MAX_ROW];
+            int[][] counts = new int[N][MAX_ROW];
+            for (int idx = 0; idx < N; idx++) {
+                keys[idx][0] = A[idx];
+                counts[idx][0] = 1;
+            }
+            int numOfKeys = N;
+
+            for (int idx = 0; idx < N; idx++) {
+                for (int row = 1; row < MAX_ROW; row++) {
+                    keys[idx][row] = MINUS_KEY;
+                }
+            }
+
+            for (int idx = 1; idx < N; idx++) {
+                int preIdx = idx - 1;
+                int preRow = 0;
+                int row = 0;
+                do {
+                    int nextValue = keys[idx][0] & keys[preIdx][preRow];
+                    if (nextValue == keys[idx][row]) {
+                        counts[idx][row] += counts[preIdx][preRow];
+                    } else {
+                        row += 1;
+                        keys[idx][row] = nextValue;
+                        counts[idx][row] = counts[preIdx][preRow];
+                        numOfKeys += 1;
+                    }
+                    preRow += 1;
+                } while (keys[preIdx][preRow] != -1);
+            }
+            return new CompactMatrix(keys, counts, numOfKeys);
+        }
+
+        public Struct[] getSortedKeysWithCount() {
+            Struct[] sortedKeys = new Struct[numOfKeys + 1];
+            int i = 0;
+            int colNum = keys.length;
+            for (int idx = 0; idx < colNum; idx++) {
+                int row = 0;
+                while (keys[idx][row] != MINUS_KEY) {
+                    sortedKeys[i++] = new Struct(keys[idx][row], idx, counts[idx][row]);
+                    row += 1;
+                }
+            }
+            // Insert a last smallest element to stop loop later
+            sortedKeys[numOfKeys] = new Struct(MINUS_KEY, -1, -1);
+
+            Arrays.sort(sortedKeys);
+            return sortedKeys;
+        }
+
+        public Counter newCounter() {
+            return new Counter(keys.length, getSortedKeysWithCount());
+        }
+
+        public int getKeyUsingLeftMatrixOf(int left, int right) {
+            int maxRow = right - left;
+            int idx = left;
+            int rowInMatrix = 0;
+            int row = counts[idx][rowInMatrix] - 1;
+            while (row < maxRow) {
+                rowInMatrix += 1;
+                row += counts[idx][rowInMatrix];
+            }
+            return keys[idx][rowInMatrix];
+        }
+    }
+    static class Struct implements Comparable<Struct> {
+        int key, dat, count;
+
+        public Struct(int v, int d, int c) {
+            this.key = v;
+            this.dat = d;
+            this.count = c;
+        }
+
+        public Struct(int v, int d) {
+            this(v, d, 0);
+        }
+
+        @Override
+        public int compareTo(Struct s) {
+            if (this.key < s.key) {
+                return 1;
+            }
+            if (this.key > s.key) {
+                return -1;
+            }
+            if (this.dat < s.dat) {
+                return 1;
+            }
+            if (this.dat > s.dat) {
+                return -1;
+            }
+            return 0;
+        }
+    }
+    static class Counter {
+        int[][] countsOfBiggerKeys;
+        int numOfColumnBlocks;
+        Struct[] sortedKeys;
+        int keyIdx;
+
+        public Counter(int colNum, Struct[] sortedKeys) {
+            this.numOfColumnBlocks = ( (int) (Math.log(colNum) / Math.log(2)) ) + 1;
+            this.countsOfBiggerKeys = new int[colNum][this.numOfColumnBlocks];
+            this.sortedKeys = sortedKeys;
+            this.keyIdx = 0;
+        }
+
+        public void countDownTo(int limit) {
+            while (sortedKeys[keyIdx].key > limit) { // No need to check (keyId < length)
+                                                     // for the last element has key=-1
+                updateCountWith(sortedKeys[keyIdx].count, sortedKeys[keyIdx].dat);
+                keyIdx += 1;
+            }
+        }
+
+        public void updateCountWith(int countOfKey, int rowIdx) {
+            for (int row=0; row < numOfColumnBlocks; row++) {
+                countsOfBiggerKeys[rowIdx][row] += countOfKey;
+                rowIdx /= 2;
+            }
+        }
+
+        public int getCountOfBiggerKeysToColumn(int rowIdx) {
+            int countOfBigger = 0;
+            int row = 0;
+            while (rowIdx > 0) {
+                if (rowIdx % 2 != 0) {
+                    countOfBigger += countsOfBiggerKeys[rowIdx-1][row];
+                }
+                rowIdx /= 2;
+                row += 1;
+            }
+            return countOfBigger;
+        }
+    }
+
+    //-------------------------------------------------------------------
+    private static void getCountsForTests() {
+
+        CompactMatrix leftMatrix = CompactMatrix.CreateLeftMatrixOfANDFrom(N, A);
+        CompactMatrix rightMatrix = CompactMatrix.CreateRightMatrixOfANDFrom(N, A);
+        Counter leftCounter = leftMatrix.newCounter();
+        Counter rightCounter = rightMatrix.newCounter();
+
+        Struct[] sortedLimits = getSortedTestsByLimit();
+        for (int i = 0; i < Q; i++) {
+            int testId = sortedLimits[i].dat;
+            int limit = Tests[testId].limit;
+            int left = Tests[testId].left;
+            int right = Tests[testId].right;
+            int minKey = leftMatrix.getKeyUsingLeftMatrixOf(left, right);
+            if (minKey <= limit) { // Min value of all keys in this segments <= Condition X of test
+                leftCounter.countDownTo(limit);
+                rightCounter.countDownTo(limit);
+
+                int countOfBigger = rightCounter.getCountOfBiggerKeysToColumn(right + 1);
+                countOfBigger -= leftCounter.getCountOfBiggerKeysToColumn(left);
+
+                int len = right - left + 1;
+                Tests[testId].count = len * (len + 1) / 2 - countOfBigger;
+            } // else Tests[testId].count = 0 (default init value)
+        }
+    }
+
+    private static Struct[] getSortedTestsByLimit() {
+        Struct[] sortedLimits = new Struct[Q];
+        for (int testId = 0; testId < Q; testId++) {
+            sortedLimits[testId] = new Struct(Tests[testId].limit, testId);
+        }
+        Arrays.sort(sortedLimits);
+        return sortedLimits;
+    }
+
+}

@@ -1,0 +1,128 @@
+import java.io.*;
+import java.util.Arrays;
+
+public class HR_coolguy_and_two_subsequences_new {
+
+    final static long mod = 1000000007;
+    final static long inv6 = 166666668;
+
+    static long f(long cnt1, long k) {
+        return (cnt1 * k + (mod - k) * (k + 1) % mod * (2 * k + 1) % mod * inv6) % mod;
+    }
+
+    static class Value {
+        int prefix = 0, suffix = 0;
+        long cnt1 = 0, cnt2 = 0;
+        int len = 1;
+
+        void combine(Value a, Value b) {
+            len = a.len + b.len;
+            prefix = a.prefix == a.len ? a.len + b.prefix : a.prefix;
+            suffix = b.suffix == b.len ? a.suffix + b.len : b.suffix;
+            cnt1 = (a.cnt1 + b.cnt1 + 1L * a.suffix * b.prefix) % mod;
+            cnt2 = (a.cnt2 + b.cnt2 + a.cnt1 * b.cnt1 + a.suffix * f(b.cnt1, b.prefix) + b.prefix * f(a.cnt1, a.suffix)) % mod;
+        }
+    }
+
+    static class ITree {
+        Value[] vs;
+        int size;
+
+        ITree(int n) {
+            size = 1;
+            while (size < n) {
+                size *= 2;
+            }
+            vs = new Value[2 * size - 1];
+            for (int i = 0; i < size; ++i) {
+                vs[size - 1 + i] = new Value();
+            }
+            for (int i = size - 2; i >= 0; --i) {
+                vs[i] = new Value();
+                vs[i].combine(vs[2 * i + 1], vs[2 * i + 2]);
+            }
+        }
+
+        void update(int i) {
+            i += size - 1;
+            vs[i].cnt1 = vs[i].prefix = vs[i].suffix = 1;
+            while (i > 0) {
+                i = (i - 1) / 2;
+                vs[i].combine(vs[2 * i + 1], vs[2 * i + 2]);
+            }
+        }
+    }
+
+    public static void solve(Input in, PrintWriter out) throws IOException {
+        int n = in.nextInt();
+        int[] a = new int[n];
+        Integer[] ord = new Integer[n];
+        for (int i = 0; i < n; ++i) {
+            a[i] = in.nextInt();
+//            a[i] = 1;
+            ord[i] = i;
+        }
+        Arrays.sort(ord, (i, j) -> -Integer.compare(a[i], a[j]));
+        ITree t = new ITree(n);
+        long ans = 0;
+        for (int i : ord) {
+            long prev = t.vs[0].cnt2;
+            t.update(i);
+            ans = (ans + (t.vs[0].cnt2 + mod - prev) * a[i]) % mod;
+        }
+        out.println(ans);
+    }
+
+    public static void main(String[] args) throws IOException {
+        PrintWriter out = new PrintWriter(System.out);
+        solve(new Input(new BufferedReader(new InputStreamReader(System.in))), out);
+        out.close();
+    }
+
+    static class Input {
+        BufferedReader in;
+        StringBuilder sb = new StringBuilder();
+
+        public Input(BufferedReader in) {
+            this.in = in;
+        }
+
+        public Input(String s) {
+            this.in = new BufferedReader(new StringReader(s));
+        }
+
+        public String next() throws IOException {
+            sb.setLength(0);
+            while (true) {
+                int c = in.read();
+                if (c == -1) {
+                    return null;
+                }
+                if (" \n\r\t".indexOf(c) == -1) {
+                    sb.append((char)c);
+                    break;
+                }
+            }
+            while (true) {
+                int c = in.read();
+                if (c == -1 || " \n\r\t".indexOf(c) != -1) {
+                    break;
+                }
+                sb.append((char)c);
+            }
+            return sb.toString();
+        }
+
+        public int nextInt() throws IOException {
+            return Integer.parseInt(next());
+        }
+
+        public long nextLong() throws IOException {
+            return Long.parseLong(next());
+        }
+
+        public double nextDouble() throws IOException {
+            return Double.parseDouble(next());
+        }
+    }
+}
