@@ -1,0 +1,265 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * Check List:
+ * 2. Turn local config to false
+ * 3. No trailing space
+ * 4. return to new line in each test case
+ * 
+ */
+public class Solution {
+    
+    //***************************************************
+    //HELP METHOD CONFIG
+    private static boolean DEBUG = false;
+    private static boolean LOCAL_TEST = false;
+    //***************************************************
+    
+    public static void main(String[] args) throws NumberFormatException, IOException {
+        FastTokenScanner scan = new FastTokenScanner(getReader("triplets"));
+        solver(scan);
+    }
+    
+    public static void solver(FastTokenScanner scan) {
+        int N = scan.nextInt();
+        Node[] a = new Node[N];
+        for (int i = 0; i < N; i ++) {
+            a[i] = new Node(scan.nextInt());
+        }
+        
+        int[] gt = new int[N];
+        int[] ls = new int[N];
+        
+        //gt
+        Node root = a[N - 1];
+        for (int i = N - 2; i >= 0; i --) {
+            addNode(root, a[i]);
+        }
+        for (int i = 0; i < N; i ++) {
+            gt[i] = a[i].more;
+        }
+        
+        //flush
+        for (int i = 0; i < N; i ++) {
+            a[i].flush();
+        }
+        
+        //ls
+        root = a[0];
+        for (int i = 0; i < N; i ++) {
+            addNode(root, a[i]);
+        }
+        for (int i = 0; i < N; i ++) {
+            ls[i] = a[i].less;
+        }
+        
+        debug(Arrays.toString(gt));
+        debug(Arrays.toString(ls));
+        
+        Map<Integer, Integer> dual = new HashMap<Integer, Integer>();
+        long sum = 0;
+        for (int i = 0; i < N; i ++) {
+            sum += (long) ls[i] * (long) gt[i];
+            if (dual.containsKey(a[i].value)) {
+                sum -= (long) ls[dual.get(a[i].value)] * (long) gt[i];
+            } else {
+                dual.put(a[i].value, i);
+            }
+        }
+        
+        System.out.println(sum);
+        
+    }
+    
+    public static boolean addNode(Node root, Node target) {
+        if (root.value == target.value) {
+            target.less += (root.left == null? 0 : root.left.size);
+            target.more += (root.right == null? 0 : root.right.size);
+            return false;
+        }
+        boolean status;
+        if (target.value < root.value) {
+            if (root.left == null) {
+                root.left = target;
+                status = true;
+            } else {
+                status = addNode(root.left, target);
+            }
+            target.more += 1 + (root.right == null? 0 : root.right.size);
+        } else {
+            if (root.right == null) {
+                root.right = target;
+                status = true;
+            } else {
+                status = addNode(root.right, target);
+            }
+            target.less += 1 + (root.left == null? 0 : root.left.size);
+        }
+        
+        if (status) {
+            root.size ++;
+        }
+        return status;
+    }
+    
+    private static class Node {
+        public int value;
+        public int size;
+        public Node left;
+        public Node right;
+        
+        public int less;
+        public int more;
+        
+        public Node(int value) {
+            this.value = value;
+            flush();
+        }
+        
+        public void flush() {
+            size = 1;
+            left = null;
+            right = null;
+            less = 0;
+            more = 0;
+        }
+        
+    }
+    
+    //************************************************************************
+    // HELPER METHOD
+    //************************************************************************
+    private static void debug(Object... args) {
+        if (DEBUG) {
+            for (Object s : args) {
+                System.out.print(s + " ");
+            }
+            
+            System.out.println();
+        }
+    }
+    
+    private static void debug(int[] array) {
+        if (DEBUG) {
+            for (int i = 0; i < array.length; i ++) {
+                System.out.print(array[i] + " ");
+            }
+            System.out.println();
+        }
+    }
+    
+    private static BufferedReader getReader(String fileName) throws FileNotFoundException {
+        if (LOCAL_TEST) {
+            File testFile = new File(fileName);
+            return  new BufferedReader(
+                    new InputStreamReader(
+                    new FileInputStream(testFile)));
+        }
+        return   new BufferedReader(
+                 new InputStreamReader(System.in));
+    }
+    
+    private static void runMultiCaseSolver(FastScanner scan) {
+        int testCase = scan.readTestCaseNum();
+        for (int i = 0; i < testCase; i ++) {
+            solver((FastTokenScanner) scan);
+        }
+    }
+    
+    // Fast scanner of buffered std reader
+    public static class FastScanner {
+        protected BufferedReader reader;
+        private int testCaseNum;
+        
+        public FastScanner(BufferedReader reader) {
+            this.reader = reader;
+        }
+        
+        public int readTestCaseNum() {
+            try {
+                return Integer.parseInt(reader.readLine());
+            } catch (IOException e) {
+                throw new RuntimeException("Bad reader!");
+            }
+        }
+    }
+    
+    public static class FastTokenScanner extends FastScanner {
+        private String[] tokens;
+        private int pos;
+        
+        public FastTokenScanner(BufferedReader reader) {
+            super(reader);
+            tokens = new String[0];
+            pos = 0;
+        }
+        
+        private void loadNextLine() {
+            String line;
+            try {
+                if ((line = reader.readLine()) != null) {
+                    tokens = line.split(" ");
+                    pos = 0;
+                } else {
+                    throw new RuntimeException("No more input!");
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Bad reader!", e);
+            }
+        }
+        
+        public String nextToken() {
+            if (pos == tokens.length) loadNextLine();
+            String token = tokens[pos];
+            pos ++;
+            return token;
+        }
+        
+        public int nextInt() {
+            return Integer.parseInt(nextToken());
+        }
+        
+        public long nextLong() {
+            return Long.parseLong(nextToken());
+        }
+    }
+    
+    // Weighted Object holder
+    public static class WeightedObject<T> implements Comparable<WeightedObject<T>> {
+        public int weight;
+        public T object;
+        
+        public WeightedObject(T object, int weight) {
+            this.object = object;
+            this.weight = weight;
+        }
+        
+        @Override
+        public int compareTo(WeightedObject<T> other) {
+            return weight - other.weight;
+        }
+        
+        @Override
+        public String toString() {
+            return object + "_$" + weight;
+        }
+    }
+    
+    // Hack
+    public static String buildRemainingData(FastTokenScanner scan, int lineNum) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < lineNum; i ++) {
+            builder.append(scan.nextToken() + " " + scan.nextToken() + "\n");
+        }
+        return builder.toString();
+    }
+    
+}

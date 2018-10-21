@@ -1,0 +1,63 @@
+import java.io.*;
+import java.util.*;
+import java.text.*;
+import java.math.*;
+import java.util.regex.*;
+
+public class Solution {
+
+    public static void main(String[] args) {
+       Scanner in = new Scanner(System.in);
+        int N = in.nextInt();
+        long H = in.nextLong();
+        long V = in.nextLong();
+        List<Vertex> vertex = new ArrayList<>();
+
+        for (int i=0; i < N; i++) {
+            Vertex vx = new Vertex(in.nextLong(), in.nextLong());
+            vertex.add(vx);
+        }
+        for (int i=0; i < N-1; i++) {
+            int fromPath = in.nextInt()-1;
+            int toPath = in.nextInt()-1;
+            vertex.get(fromPath).neighbours.add(vertex.get(toPath));
+            vertex.get(toPath).neighbours.add(vertex.get(fromPath));
+        }
+
+        long count = 0;
+
+        for (int i=0; i < N; i++) {
+            count += (N - findUnorderedPairs(vertex.get(i), null, 0, 0, H, V));
+        }
+
+        System.out.println(count/2);
+        int temp = 0;
+
+    }
+
+    private static long findUnorderedPairs(Vertex vertex, Vertex previousVertex, long hor, long vert, long H, long V) {
+        if (hor > H || vert > V) {
+            return 0;
+        }
+
+        long result = 1;
+
+        for (Vertex v : vertex.neighbours) {
+                result += (v != previousVertex) ? findUnorderedPairs(v, vertex, hor + Math.abs(vertex.x - v.x), vert + Math.abs(vertex.y - v.y), H, V) : 0;
+
+        }
+
+        return result;
+    }
+
+    private static class Vertex {
+        private long x;
+        private long y;
+        public ArrayList<Vertex> neighbours;
+
+        public Vertex(long x, long y) {
+            this.x = x;
+            this.y = y;
+            neighbours = new ArrayList<>();} /* Enter your code here. Read input from STDIN. Print output to STDOUT. Your class should be named Solution. */
+    }
+}

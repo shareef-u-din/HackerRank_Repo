@@ -1,0 +1,183 @@
+import java.io.*;
+import java.util.*;
+import java.text.*;
+import java.math.*;
+import java.util.regex.*;
+
+public class Solution {
+
+
+	public static void main(String[] args) {
+		try (final Scanner scanner = new Scanner(System.in)) {
+			int itemCount = scanner.nextInt();
+			int commandCount = scanner.nextInt();
+			int[] a = new int[itemCount];
+			a[0] = 0;
+			for (int i = 1; i < itemCount; i++) {
+				a[i] = i;
+			}
+			ReversibleBidirectionalTreap treap = new ReversibleBidirectionalTreap(a);
+			StringBuilder sb = new StringBuilder();
+			for (int i = 0; i < commandCount; i++) {
+				int opCode = scanner.nextInt();
+				if (opCode == 1) {
+					int fromIndex = scanner.nextInt();
+					int toIndex = scanner.nextInt();
+					treap.root.reverseRange(fromIndex - 1, toIndex);
+				} else if (opCode == 2) {
+					int element = scanner.nextInt();
+					sb.append("element " + element + " is at position " + (treap.getOrder(element - 1)+1) + "\n");
+				} else if (opCode == 3) {
+					int position = scanner.nextInt();
+					sb.append("element at position " + position + " is " + (treap.root.get(position - 1)+1) + "\n");
+				}
+
+			}
+			scanner.close();
+			System.out.println(sb.toString());
+		}
+	}
+
+	static class ReversibleBidirectionalTreap {
+
+		Node[] nodes; // åˆ?æœŸé †åº?ã‚’ä¿?æŒ?ã?—ã?¦ã?Šã??ã?Ÿã‚?ã?®é…?åˆ—
+		Node root;
+
+		static class NodePair {
+			Node l;
+			Node r;
+		}
+
+		static class Node {
+			Node l;
+			Node r;
+			Node par;
+			int size = 1;
+			int val;
+			boolean rev;
+			double p;
+
+			private Node update() {
+				size = nodeSize(l) + nodeSize(r) + 1;
+				return this;
+			}
+
+			private static int nodeSize(Node node) {
+				return node != null ? node.size : 0;
+			}
+
+			private void processRev() {
+				if (rev) {
+					Node temp = l;
+					l = r;
+					r = temp;
+					if (l != null)
+						l.rev ^= true;
+					if (r != null)
+						r.rev ^= true;
+					rev = false;
+				}
+			}
+
+			static Node merge(Node l, Node r) {
+				if (l == null || r == null)
+					return l != null ? l : r;
+				if (l.p > r.p) {
+					l.processRev();
+					l.r = merge(l.r, r);
+					l.r.par = l;
+					return l.update();
+				} else {
+					r.processRev();
+					r.l = merge(l, r.l);
+					r.l.par = r;
+					return r.update();
+				}
+			}
+
+			static NodePair split(Node node, int k) {
+				NodePair ret = new NodePair();
+				if (node == null)
+					return ret;
+				node.processRev();
+
+				if (k <= nodeSize(node.l)) {
+					ret = split(node.l, k);
+					node.l = ret.r;
+					if (ret.r != null)
+						ret.r.par = node;
+					ret.r = node.update();
+					if (ret.l != null)
+						ret.l.par = null;
+				} else {
+					ret = split(node.r, k - nodeSize(node.l) - 1);
+					node.r = ret.l;
+					if (ret.l != null)
+						ret.l.par = node;
+					ret.l = node.update();
+					if (ret.r != null)
+						ret.r.par = null;
+				}
+				return ret;
+			}
+
+			int get(int i) {
+				processRev();
+				if (i < nodeSize(l))
+					return l.get(i);
+				if (i == nodeSize(l))
+					return val;
+				return r.get(i - nodeSize(l) - 1);
+			}
+
+			int getOrder() {
+				int ret = par != null ? par.getOrder() : 0;
+				processRev();
+				return ret + (par == null ? nodeSize(l) : par.l == this ? -nodeSize(r) - 1 : nodeSize(l) + 1);
+			}
+
+			Node reverseRange(int l, int r) {
+				NodePair ab = split(this, l);
+				NodePair bc = split(ab.r, r - l);
+				bc.l.rev ^= true;
+				return merge(ab.l, merge(bc.l, bc.r));
+			}
+		}
+
+		public ReversibleBidirectionalTreap(int[] data) {
+			int n = data.length;
+			nodes = new Node[n];
+			for (int i = 0; i < n; i++) {
+				nodes[i] = new Node();
+				nodes[i].val = i; // data is perm
+				nodes[i].p = Math.random();
+			}
+			root = nodes[data[0]];
+			for (int i = 1; i < n; i++) {
+				root = Node.merge(root, nodes[data[i]]);
+			}
+		}
+
+		int getOrder(int i) {
+			return nodes[i].getOrder();
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			this.toString(this.root, sb);
+			return sb.toString().trim();
+		}
+
+		void toString(Node t, StringBuilder sb) {
+			if (t == null)
+				sb.append(' ');
+			else {
+				this.toString(t.l, sb);
+				sb.append(t.val);
+				this.toString(t.r, sb);
+			}
+		}
+	}
+
+}

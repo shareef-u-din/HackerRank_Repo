@@ -1,0 +1,252 @@
+import java.io.*;
+import java.util.*;
+
+/**
+ * Created by hiro.gen on 1/15/17.
+ */
+
+class Bit {
+    private int[] bit;
+
+    public Bit(int n) {
+        bit = new int[n + 1];
+    }
+
+    public void edit(int k, int delta) {
+        for (int i = k + 1; i < bit.length; i += i & -i) {
+            // System.out.println(i);
+            bit[i] += delta;
+        }
+    }
+
+    public int sum(int k) {
+        int ans = 0;
+
+        for (int i = k + 1; i > 0; i -= i & -i) {
+            ans += bit[i];
+        }
+        return ans;
+    }
+
+    public int range(int i, int j) {
+        return sum(j) - sum(i - 1);
+    }
+}
+
+class Query {
+    public int index, left, right;
+
+    public Query(int index, int left, int right) {
+        this.index = index;
+        this.left = left;
+        this.right = right;
+    }
+}
+
+class Reader {
+    static BufferedReader reader;
+    static StringTokenizer tokenizer;
+
+    /** call this method to initialize reader for InputStream */
+    static void init(InputStream input) {
+        reader = new BufferedReader(new InputStreamReader(input));
+        tokenizer = new StringTokenizer("");
+    }
+
+    /** get next word */
+    static String next() throws IOException {
+        while (!tokenizer.hasMoreTokens()) {
+            // TODO add check for eof if necessary
+            tokenizer = new StringTokenizer(reader.readLine());
+        }
+        return tokenizer.nextToken();
+    }
+
+    static int nextInt() throws IOException {
+        return Integer.parseInt(next());
+    }
+
+    static double nextDouble() throws IOException {
+        return Double.parseDouble(next());
+    }
+}
+
+public class AlmostEqual {
+
+    static class QueryCmp implements Comparator<Query> {
+        int sqrtN;
+
+        public QueryCmp(int n) {
+            sqrtN = (int) Math.sqrt(n);
+            if (sqrtN < 1) {
+                sqrtN = 1;
+            }
+        }
+
+        @Override
+        public int compare(Query q1, Query q2) {
+
+            if (q1.left / sqrtN < q2.left / sqrtN) {
+                return -1;
+            } else if (q1.left / sqrtN > q2.left / sqrtN) {
+                return 1;
+            } else if (q1.right < q2.right) {
+                return -1;
+            } else if (q1.right > q2.right) {
+                return 1;
+            } else {
+                if (q1.left < q2.left) {
+                    return -1;
+                } else if (q1.left > q2.left) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        }
+    }
+
+    public static int add(Bit tree, int i) {
+        tree.edit(sumoIndex[i], 1);
+        return tree.range(leftIndex[i], rightIndex[i]) - 1;
+    }
+
+    public static int remove(Bit tree, int i) {
+        int res = tree.range(leftIndex[i], rightIndex[i]) - 1;
+        tree.edit(sumoIndex[i], -1);
+        return res;
+    }
+
+    public static int[] leftIndex, sumoIndex, rightIndex;
+    public static int n;
+
+    public static void main(String[] args) throws IOException {
+
+        // Scanner scanner = new Scanner(System.in);
+        // Reader reader = new Reader(System.in);
+        // FileInputStream fio = new FileInputStream(new
+        // File("/Users/hiro.gen/Desktop/input10.txt"));
+        // Reader reader = new Reader(System.in);
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        BufferedWriter cout = new BufferedWriter(new OutputStreamWriter(System.out));
+        int k = 0;
+        try {
+            String[] str = br.readLine().split(" ");
+            n = Integer.parseInt(str[0]);
+            k = Integer.parseInt(str[1]);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // System.out.printf("%d %d\n", n, k);
+
+        // n = scanner.nextInt();
+        // int k = scanner.nextInt();
+        // System.out.printf("%d %d\n", n, k);
+        int[] sumo = new int[n];
+        Integer[] arr = null;
+        try {
+            String[] numbers = br.readLine().split(" ");
+            HashSet<Integer> set = new HashSet<>();
+            for (int i = 0; i < n; i++) {
+                sumo[i] = Integer.parseInt(numbers[i]);
+                set.add(sumo[i]);
+                set.add(sumo[i] - k);
+                set.add(sumo[i] + k);
+            }
+            // arr = new int[set.size()];
+            // Integer[] arrInt =
+            // System.out.printf("%d %d\n", arr.length, arrInt.length);
+            arr = set.toArray(new Integer[set.size()]);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Arrays.sort(arr);
+        leftIndex = new int[n];
+        sumoIndex = new int[n];
+        rightIndex = new int[n];
+
+        // System.out.printf("%d\n", arr.length);
+
+        for (int i = 0; i < sumo.length; i++) {
+            sumoIndex[i] = Arrays.binarySearch(arr, sumo[i]);
+            leftIndex[i] = Arrays.binarySearch(arr, sumo[i] - k);
+            rightIndex[i] = Arrays.binarySearch(arr, sumo[i] + k);
+        }
+
+        int q_cnt = 0;
+        try {
+            q_cnt = Integer.parseInt(br.readLine());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // System.out.printf("%d\n", q_cnt);
+        // int q_cnt = scanner.nextInt();
+        // System.out.printf("%d\n", q_cnt);
+        Query[] queries = new Query[q_cnt];
+        for (int i = 0; i < q_cnt; i++) {
+            try {
+                String[] str = br.readLine().split(" ");
+
+                int l = Integer.parseInt(str[0]);
+                int r = Integer.parseInt(str[1]);
+
+                Query query = new Query(i, l, r);
+                queries[i] = query;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // System.out.println("Input finished.");
+
+        QueryCmp cmp = new QueryCmp(arr.length);
+        Arrays.sort(queries, cmp);
+
+        Bit tree = new Bit(arr.length);
+        int pre_left = -1, pre_right = -1;
+
+        long[] result = new long[q_cnt];
+
+        // main part
+        long ans = 0;
+
+        int ci = 0;
+        for (Query q : queries) {
+            // ci ++;
+
+            if (pre_left == -1) {
+                for (int i = q.left; i <= q.right; i++) {
+                    ans += add(tree, i);
+                }
+            } else {
+                if (pre_left < q.left) {
+                    for (int i = pre_left; i < q.left; i++) {
+                        ans -= remove(tree, i);
+                    }
+                } else if (pre_left > q.left) {
+                    for (int i = q.left; i < pre_left; i++) {
+                        ans += add(tree, i);
+                    }
+                }
+                if (pre_right < q.right) {
+                    for (int i = q.right; i > pre_right; i--) {
+                        ans += add(tree, i);
+                    }
+                } else if (pre_right > q.right) {
+                    for (int i = pre_right; i > q.right; i--) {
+                        ans -= remove(tree, i);
+                    }
+                }
+            }
+            pre_left = q.left;
+            pre_right = q.right;
+            result[q.index] = ans;
+            // System.out.printf("%d %d %d\n", q.left, q.right, move);
+            // System.out.println(ans);
+        }
+        for (long res : result) {
+            cout.write(String.format("%d\n", res));
+        }
+        cout.close();
+    }
+}
